@@ -38,4 +38,7 @@
     - Open() конструктор для нашого Fstorage, який визиває buildIndex()
 4) CoinbaseClient має один метод, який робить Get запит в https://api.coinbase.com/v2/prices/spot?currency=UAH, парсить джейсон, та повертає поточний курс.
 5) SmtpClient теж має один метод, який робить запит в SMTP server, щоб відправити імейл.
+
+### Config.yml
+
    

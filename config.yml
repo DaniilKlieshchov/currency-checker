@@ -1,12 +1,18 @@
+#start server at bind_ip and port
 listen:
-  bind_id: 0.0.0.0
+  bind_ip: 0.0.0.0
   port: 1313
 
+#smtp server
 email_server:
+  #host and port of your smtp server
   host: smtp.gmail.com
   port: 587
   credentials:
+    #your email
     email: email@gmail.com
+    #password
     password: password
 
+#file path where your email list is stored
 storage_path: email.txt
