@@ -1,0 +1,12 @@
+listen:
+  bind_id: 0.0.0.0
+  port: 1313
+
+email_server:
+  host: smtp.gmail.com
+  port: 587
+  credentials:
+    email: email@gmail.com
+    password: password
+
+storage_path: email.txt
