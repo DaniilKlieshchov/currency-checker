@@ -94,7 +94,7 @@ func (h *HTTPHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	marshal, _ := json.Marshal("email is already in the list\n")
-	err = h.emailServ.Subscribe(data, h.log)
+	err = h.emailServ.Subscribe(data)
 	if err != nil {
 		h.log.Error(err.Error())
 		w.WriteHeader(409)
