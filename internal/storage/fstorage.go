@@ -20,12 +20,12 @@ func (f *Fstorage) Append(email string) error {
 	}
 	str := fmt.Sprintf("%s\n", email)
 	f.mu.Lock()
+	defer f.mu.Unlock()
 	_, err := f.file.WriteString(str)
-	f.index[email] = true
-	f.mu.Unlock()
 	if err != nil {
 		return err
 	}
+	f.index[email] = true
 	return nil
 }
 
