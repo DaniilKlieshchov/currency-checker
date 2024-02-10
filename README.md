@@ -1,49 +1,36 @@
-### Опис Основної Логіки:
-У нас 5 основних структур: 
-- Handler (обробляє запити) /internal/handlers/handler.go
-- EmailService (основна бізнес логіка) /internal/service/email.go
-- Fstorage (зберігає записи у файл) /internal/storage/fstorage.go
-- CoinbaseClient (дістає поточний курс з сервісу Coinbase) /internal/client/coinbase.go
-- SmtpClient (відправляє імейли використовуючи якийсь smtp сервер) /internal/client/smtp.go
+# Project Overview
 
+This project is structured around five core components, designed to handle email notifications based on currency exchange rates from the Coinbase service. Below is a brief overview of each component and their functionalities:
 
-1) Handler спілкується з EmailService та має 3 основних методи, основна логіка яких:
-   - GetRate() 
-     1) Визиває метод сервісу Rate(), який повертає поточний курс, якщо з сервісом щось сталося і курс ми отримати не можемо, повертаємо помлику 400
-     2) Потім пише цей курс в респонс. 
-   - Subscribe()
-     1) Визиває метод сервісу Subscribe(), який просить записати у файл імейл, якщо такий запис вже існує повертаємо 409, також валідує імейл на правопис
-     2) Отримує імейл, передає його в метод сервісу 
-   - SendEmails()
-     1) Визиває метод сервісу SendEmails(), який просить smtp клієнт розіслати ці імейли
-     2) Пишемо в респонс ті імейли, для яких отримали помилку
-2) EmailService спілкується з Fstorage, CoinbaseClient, SmtpClient через інтерфейси, також має 3 основні методи:
-   - Rate()
-     1) Звертається до клієнту для отримання поточного курсу
-   - SendEmail()
-     1) Теж отримує поточний курс за допомогою клієнту
-     2) Визиває метод GetEmails() у Storage, який повертає масив імейлів
-     3) Далі у окремому потоці викликаємо метод smtp-клієнта SendEmail(), який відправяє імейл
-     4) У разі помилки при відправлені додаємо імейл в массив
-     5) Чекаємо завершення роботи усіх потоків, щоб повернути масив усіх невідправлених імейлів
-   - Subscribe()
-     1) Просить Storage додати новий імейл до списку, повертає помилку, якщо імейл вже існує
-3) Fstorage тримає в собі файл та відображення цього файлу у хєш-таблиці
-    - Append() додає запис у файл
-      1) Перевіряє чи є запис у нашій хєш-таблиці, якщо є, то повертаємо помилку
-      2) Якщо записа нема, то блокуємо мьютекс, щоб інші потоки нічого не зламали, записуємо у файл та у індекс, відкриваємо мьютекс
-    - GetEmails() повертає список імейлів
-      1) Формує масив імейлів, які є у списку (бере з індексу)
-    - buildIndex() використовуємо при ініціалізації, заповніє нам хєш-таблицю
-    - Open() конструктор для нашого Fstorage, який визиває buildIndex()
-4) CoinbaseClient має один метод, який робить Get запит в https://api.coinbase.com/v2/prices/spot?currency=UAH, парсить джейсон, та повертає поточний курс.
-5) SmtpClient теж має один метод, який робить запит в SMTP server, щоб відправити імейл.
+### Core Components:
+- **Handler** (`/internal/handlers/handler.go`): Manages incoming requests and interfaces with the EmailService to execute the main logic which includes fetching the current exchange rate, subscribing users to notifications, and sending emails.
+- **EmailService** (`/internal/service/email.go`): Acts as the central business logic layer, coordinating with Fstorage, CoinbaseClient, and SmtpClient to manage rates, subscriptions, and email notifications.
+- **Fstorage** (`/internal/storage/fstorage.go`): Handles data persistence by saving email entries to a file, leveraging a hash table for efficient lookup.
+- **CoinbaseClient** (`/internal/client/coinbase.go`): Fetches the current exchange rate from Coinbase's API.
+- **SmtpClient** (`/internal/client/smtp.go`): Sends out email notifications using an SMTP server.
 
-/cmd/main.go підтягує конфігурацію, створює усі необхідні структури та запускає сервер
+### Handler Functions:
+- **getRate()**: Retrieves the current rate from the EmailService. In case of an issue, it returns a 400 status code.
+- **Subscribe()**: Registers an email for notifications, checking for duplicates and validating the email format.
+- **SendEmails()**: Triggers the sending of email notifications to all subscribed users, tracking any errors.
 
-### Запуск додатку
-1) склонувати репозиторій
-2) відредагувати config.yml, змінивши дані для доступа до smtp серверу (наприклад, це може бути gmail і ваш акаунт на ньому)
-3) створити докер образ: docker build --tag go-email . 
-4) docker run -p 1313:1313 go-email (перший порт повинен відповідати bind_ip з конфігу, а другий на якому ви хочете запустити докер контейнер)
+### EmailService Methods:
+- **Rate()**: Contacts CoinbaseClient for the latest exchange rate.
+- **SendEmail()**: Gathers emails from Fstorage and sends out notifications, collecting any unsent emails due to errors.
+- **Subscribe()**: Adds a new email to the subscription list, ensuring no duplicates.
 
+### Fstorage:
+- Manages a file and a hash table for storing email addresses.
+- **Append()**: Adds a new email, ensuring uniqueness.
+- **GetEmails()**: Retrieves a list of subscribed emails.
+- **buildIndex()**: Initializes the hash table during startup.
+
+### External Communication:
+- **CoinbaseClient** makes a GET request to Coinbase for the latest exchange rate in UAH.
+- **SmtpClient** interfaces with an SMTP server to send emails.
+
+### Application Setup and Launch:
+1. Clone the repository.
+2. Edit `config.yml` with your SMTP server details (e.g., Gmail).
+3. Build a Docker image: `docker build --tag go-email .`
+4. Run the container: `docker run -p 1313:1313 go-email` (ensure the first port matches `bind_ip` in the config).
